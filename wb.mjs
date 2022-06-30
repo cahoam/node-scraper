@@ -28,5 +28,5 @@ async function webScraping () {
 
 const aaaa = await webScraping()
 setTimeout(function(){
- console.log(aaaa)
+  console.log(aaaa)
 },2000)
