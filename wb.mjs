@@ -1,32 +1,32 @@
-import clScrapper from 'cloudflare-scraper';
-import cheerio from 'cheerio';
+import cloudflareScraper from 'cloudflare-scraper';
+import Cheerio from 'cheerio';
 
-const fiis = ['mxrf11','cpts11','snci11'];
+const fiis = ['snci11', 'cpts11', 'mxrf11', 'urpr11'];
+var currentMarketValue, pvp, $;
 
-const fetch = async function(fii){
-  return await clScrapper.get('https://www.fundsexplorer.com.br/funds/' + fii)
-  .then(function(response){
-    const $ = cheerio.load(response);
-    const value = $('span.price').text().replace(/\n| |\t|\$|[A-Za-z]/g,'').replace(',','.');
-    return {"name": fii, "value": value}
-  })
+function floatNumberFilter(value){
+    return value.replace(/\n| |\t|[A-Za-z]|\$/g, '').replace(',','.');
 }
 
-async function webScraping () {
-  var array_result = [];
-  fiis.forEach(async (fii) => {
-    try {
-      const temp = await fetch(fii);
-      array_result.push(temp);
-      // console.log(temp);
-    } catch (err) {
-      console.error(err);
-    }
-  })
-  return array_result;
+function fetch(url){
+    return cloudflareScraper.get(url);
 }
 
-const aaaa = await webScraping()
-setTimeout(function(){
-  console.log(aaaa)
-},2000)
+function scraper(html, fii){
+    $ = Cheerio.load(html);
+    currentMarketValue = floatNumberFilter($('div#stock-price span.price').text());
+    pvp = floatNumberFilter($('div.carousel-cell:last-child span.indicator-value').text());
+    return {fii, currentMarketValue, pvp};
+}
+
+async function main (){
+    const promise = fiis.map(async fii => {
+        const html = await fetch('https://www.fundsexplorer.com.br/funds/' + fii);
+        return scraper(html, fii);
+    })
+    return await Promise.all(promise);
+};
+
+const result = await main()
+// result.sort((a,b) => a.pvp - b.pvp);
+console.log(result)
